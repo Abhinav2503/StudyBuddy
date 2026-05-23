@@ -1,0 +1,10 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/settings.json
+.idea/
+
+# If you ever add Node tools
+node_modules/

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Buddy 🌱 – Focus Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- ── External Libraries ── -->
+  <!-- face-api.js for face detection -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- PDF.js for local PDF rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- html2pdf.js for session report export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     HEADER / NAV
+═══════════════════════════════════════ -->
+<header class="app-header">
+  <div class="header-brand">
+    <span class="brand-icon">🌱</span>
+    <span class="brand-name">Study Buddy</span>
+    <span class="brand-sub">Focus Garden</span>
+  </div>
+  <div class="header-status">
+    <div id="modelStatus" class="status-badge loading">
+      <span class="status-dot"></span>
+      <span class="status-text">Loading AI Models…</span>
+    </div>
+    <div id="sessionCounter" class="session-badge">
+      🍅 <span id="pomodoroCount">0</span> sessions today
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════
+     MAIN SPLIT SCREEN
+═══════════════════════════════════════ -->
+<main class="split-screen">
+
+  <!-- ──────────────────────────────────
+       LEFT PANE — Study Zone
+  ────────────────────────────────── -->
+  <section class="study-zone" id="studyZone">
+
+    <!-- Source Selector -->
+    <div class="source-selector">
+      <button class="src-btn active" id="btnYoutube" onclick="App.setSource('youtube')">
+        <span>📺</span> YouTube
+      </button>
+      <button class="src-btn" id="btnPdf" onclick="App.setSource('pdf')">
+        <span>📄</span> PDF
+      </button>
+    </div>
+
+    <!-- YouTube Panel -->
+    <div class="study-panel" id="youtubePanel">
+      <div class="url-bar">
+        <input type="text" id="youtubeUrl" placeholder="Paste a YouTube URL here…" />
+        <button class="load-btn" onclick="App.loadYoutube()">Load ▶</button>
+      </div>
+      <div class="iframe-wrapper" id="iframeWrapper">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">📺</div>
+          <p>Paste a YouTube link above<br/>and click <strong>Load</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Panel -->
+    <div class="study-panel hidden" id="pdfPanel">
+      <div class="pdf-toolbar">
+        <label class="upload-btn" for="pdfUpload">
+          📂 Upload PDF
+          <input type="file" id="pdfUpload" accept=".pdf" onchange="App.loadPDF(this)" />
+        </label>
+        <div class="pdf-nav" id="pdfNav" style="display:none;">
+          <button onclick="App.pdfPrevPage()" class="nav-btn">◀</button>
+          <span id="pdfPageInfo">Page 1 / 1</span>
+          <button onclick="App.pdfNextPage()" class="nav-btn">▶</button>
+        </div>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="pdfCanvas"></canvas>
+        <div class="placeholder-screen" id="pdfPlaceholder">
+          <div class="placeholder-icon">📄</div>
+          <p>Upload a PDF to begin reading</p>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ──────────────────────────────────
+       RIGHT PANE — Focus Buddy
+  ────────────────────────────────── -->
+  <aside class="focus-buddy" id="focusBuddy">
+
+    <!-- ── Virtual Pet ── -->
+    <div class="pet-container" id="petContainer">
+      <div class="pet-level-badge">Lv.<span id="petLevel">1</span></div>
+      <div class="pet-emoji" id="petEmoji">🐣</div>
+      <div class="pet-name" id="petName">Sprout</div>
+      <div class="pet-mood" id="petMood">Waiting for you…</div>
+      <div class="xp-bar-wrapper">
+        <div class="xp-bar" id="xpBar" style="width:0%"></div>
+      </div>
+      <div class="xp-label"><span id="xpValue">0</span> / <span id="xpMax">100</span> XP</div>
+    </div>
+
+    <!-- ── Timer Ring ── -->
+    <div class="timer-section">
+      <div class="timer-ring-wrapper">
+        <svg class="timer-ring" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="52"
+            stroke-dasharray="326.7" stroke-dashoffset="0" />
+        </svg>
+        <div class="timer-display">
+          <span id="timerMinutes">25</span><span class="timer-colon">:</span><span id="timerSeconds">00</span>
+        </div>
+        <div class="timer-phase" id="timerPhase">Focus</div>
+      </div>
+
+      <!-- Duration Picker (shows only when idle) -->
+      <div class="duration-picker" id="durationPicker">
+        <span class="picker-label">Session:</span>
+        <button class="dur-btn active" data-mins="25" onclick="App.setDuration(25, this)">25m</button>
+        <button class="dur-btn" data-mins="45" onclick="App.setDuration(45, this)">45m</button>
+        <button class="dur-btn" data-mins="60" onclick="App.setDuration(60, this)">60m</button>
+      </div>
+    </div>
+
+    <!-- ── Camera Calibration Feed ── -->
+    <div class="camera-section">
+      <div class="camera-label">
+        <span class="cam-icon">📷</span>
+        <span id="camLabel">Camera Calibration</span>
+      </div>
+      <div class="camera-wrapper">
+        <video id="webcamFeed" autoplay muted playsinline></video>
+        <canvas id="faceCanvas"></canvas>
+        <div class="face-indicator" id="faceIndicator">
+          <div class="face-ring" id="faceRing"></div>
+          <span id="faceStatus">Searching for face…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Control Buttons ── -->
+    <div class="controls">
+      <button class="ctrl-btn start-btn" id="startBtn" disabled onclick="App.startSession()">
+        <span class="btn-icon">🚀</span>
+        <span>Start Session</span>
+      </button>
+      <button class="ctrl-btn pause-btn hidden" id="pauseBtn" onclick="App.togglePause()">
+        <span class="btn-icon">⏸</span>
+        <span>Pause</span>
+      </button>
+      <button class="ctrl-btn end-btn hidden" id="endBtn" onclick="App.endSession()">
+        <span class="btn-icon">🏁</span>
+        <span>End &amp; Report</span>
+      </button>
+    </div>
+
+    <!-- ── Focus Stats (live) ── -->
+    <div class="live-stats" id="liveStats" style="display:none;">
+      <div class="stat-chip">
+        <span class="stat-icon">👁</span>
+        <span id="focusPct">100</span>% focus
+      </div>
+      <div class="stat-chip">
+        <span class="stat-icon">⚠️</span>
+        <span id="distractCount">0</span> breaks
+      </div>
+      <div class="stat-chip">
+        <span class="stat-icon">⏱</span>
+        <span id="elapsedTime">0</span>m elapsed
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<!-- ══════════════════════════════════════
+     SESSION REPORT MODAL
+═══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="reportModal">
+  <div class="modal-card" id="reportCard">
+    <div class="modal-header">
+      <span class="modal-trophy" id="reportEmoji">🏆</span>
+      <h2 id="reportTitle">Session Complete!</h2>
+      <p id="reportSubtitle">Great job, scholar!</p>
+    </div>
+    <div class="report-grid" id="reportGrid">
+      <div class="report-stat">
+        <div class="rs-value" id="rsDuration">–</div>
+        <div class="rs-label">Minutes Studied</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-value" id="rsFocus">–</div>
+        <div class="rs-label">Focus Score</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-value" id="rsDistractions">–</div>
+        <div class="rs-label">Distractions</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-value" id="rsXP">–</div>
+        <div class="rs-label">XP Earned</div>
+      </div>
+    </div>
+    <div class="report-message" id="reportMessage"></div>
+    <div class="modal-actions">
+      <button class="ctrl-btn start-btn" onclick="App.downloadReport()">📄 Save Report</button>
+      <button class="ctrl-btn pause-btn" onclick="App.closeReport()">🔄 New Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     DISTRACTION ALERT TOAST
+═══════════════════════════════════════ -->
+<div class="toast" id="distractionToast">
+  <span class="toast-pet" id="toastPet">😿</span>
+  <span id="toastMsg">Hey! Come back to studying!</span>
+</div>
+
+<script src="faceWorker-bridge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
