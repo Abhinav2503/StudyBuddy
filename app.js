@@ -2,12 +2,12 @@
  * app.js — Study Buddy: Focus Garden
  * ═══════════════════════════════════════════════════════
  * Architecture:
- *  • AppState  – single source of truth (sessionStorage-backed)
- *  • Timer     – Date.now() timestamps (immune to browser freezes)
- *  • Face      – face-api.js throttled via FaceWorkerBridge
- *  • Pet       – emoji-driven virtual pet with XP & levelling
- *  • Study     – YouTube iframe or PDF.js renderer
- *  • Report    – html2pdf.js session summary
+ * • AppState  – single source of truth (sessionStorage-backed)
+ * • Timer     – Date.now() timestamps (immune to browser freezes)
+ * • Face      – face-api.js throttled via FaceWorkerBridge
+ * • Pet       – emoji-driven virtual pet with XP & levelling
+ * • Study     – YouTube iframe or PDF.js renderer
+ * • Report    – html2pdf.js session summary
  * ═══════════════════════════════════════════════════════
  */
 
@@ -772,16 +772,36 @@ const App = {
         </p>
       </div>`;
 
+    // 1. Create container and assign the off-screen layout canvas ID
     const el = document.createElement('div');
+    el.id = 'printed-report-canvas';
     el.innerHTML = html;
 
-    html2pdf().from(el).set({
+    // 2. Explicitly append to body so mobile engines register the dimensions
+    document.body.appendChild(el);
+
+    // 3. Build precise configurations
+    const opt = {
       filename:   `StudyBuddy_Report_${now.toISOString().slice(0,10)}.pdf`,
       margin:     10,
-      image:      { type: 'jpeg', quality: .95 },
-      html2canvas:{ scale: 2 },
+      image:      { type: 'jpeg', quality: .98 },
+      html2canvas:{ 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        letterRendering: true
+      },
       jsPDF:      { unit: 'mm', format: 'a5', orientation: 'portrait' }
-    }).save();
+    };
+
+    // 4. Run execution pipeline with asynchronous callback synchronization
+    html2pdf().set(opt).from(el).save().then(() => {
+      console.log("[Report Engine] Mobile PDF generation complete. Cleaning canvas...");
+      el.remove();
+    }).catch(err => {
+      console.error("[Report Engine] PDF Generation Failed:", err);
+      if (el) el.remove();
+    });
   },
 
   /* ── Close Report & Reset ── */
