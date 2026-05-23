@@ -754,21 +754,3 @@ input  { font-family: var(--font-body); }
   .study-zone { border-right: none; border-bottom: 2px solid var(--clr-border); }
   .focus-buddy { overflow-y: visible; }
 }
-
-/* ═══════════════════════════════════════════════════
-   OFF-SCREEN CANVAS FOR MOBILE PDF GENERATION
-═══════════════════════════════════════════════════ */
-#printed-report-canvas {
-    position: absolute !important;
-    left: -9999px !important;
-    top: 0 !important;
-    width: 600px !important; /* Locks a perfect desktop aspect-ratio on mobile screens */
-    background: #ffffff !important;
-    color: #2d4a2d !important;
-    padding: 30px !important;
-    border-radius: 20px !important;
-    box-shadow: none !important;
-    transform: none !important;
-    animation: none !important;
-    box-sizing: border-box !important;
-}

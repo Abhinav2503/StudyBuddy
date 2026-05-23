@@ -738,7 +738,7 @@ const App = {
     Pet.render();
   },
 
-  /* ── Download PDF Report ── */
+/* ── Download PDF Report ── */
   downloadReport () {
     const s       = AppState.session;
     const p       = AppState.pet;
@@ -772,36 +772,22 @@ const App = {
         </p>
       </div>`;
 
-    // 1. Create container and assign the off-screen layout canvas ID
     const el = document.createElement('div');
-    el.id = 'printed-report-canvas';
     el.innerHTML = html;
 
-    // 2. Explicitly append to body so mobile engines register the dimensions
-    document.body.appendChild(el);
+    // Notice: We are keeping it perfectly hidden in memory, just like your original code!
 
-    // 3. Build precise configurations
-    const opt = {
+    html2pdf().from(el).set({
       filename:   `StudyBuddy_Report_${now.toISOString().slice(0,10)}.pdf`,
       margin:     10,
-      image:      { type: 'jpeg', quality: .98 },
+      image:      { type: 'jpeg', quality: .95 },
       html2canvas:{ 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        letterRendering: true
+        scale: 2,
+        scrollY: 0, /* THIS is the actual magic fix for mobile blank pages */
+        scrollX: 0
       },
       jsPDF:      { unit: 'mm', format: 'a5', orientation: 'portrait' }
-    };
-
-    // 4. Run execution pipeline with asynchronous callback synchronization
-    html2pdf().set(opt).from(el).save().then(() => {
-      console.log("[Report Engine] Mobile PDF generation complete. Cleaning canvas...");
-      el.remove();
-    }).catch(err => {
-      console.error("[Report Engine] PDF Generation Failed:", err);
-      if (el) el.remove();
-    });
+    }).save();
   },
 
   /* ── Close Report & Reset ── */
